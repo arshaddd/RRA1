@@ -1,0 +1,117 @@
+##   remove all objects
+rm(list=ls())     
+
+##   Load required library
+library(dplyr)
+
+library(lubridate)
+library(ggplot2)
+##   Set working Directory
+setwd("C:/Users/arsha/OneDrive/Desktop/reproduceable_research/assignment1")   
+
+mydata <- read.csv("repdata_data_activity/activity.csv", header=TRUE, na.strings="NA")
+
+##cleanup date class
+ 
+mydata$date <-ymd(mydata$date)
+
+##Remive NA
+
+ mydata1 <- na.omit(mydata)
+
+summary(mydata1)
+
+str(mydata1)
+
+head(mydata1)
+
+tail(mydata1)
+
+##Q2
+Make an histtogram of the total no of steps taken each day.........
+
+mydata2 <- summarize(group_by(mydata1,date),daily.step=sum(steps))
+mean.mydata <- as.integer(mean(mydata2$daily.step))
+median.mydata <- as.integer(median(mydata2$daily.step))
+
+plot.steps.day <- ggplot(mydata2, aes(x=daily.step)) +
++ geom_histogram(binwidth = 600, aes(y=..count.., fill=..count..)) +
++ geom_vline(xintercept=mean.mydata, colour = "Black", linetype="dashed", size=1) +
++ geom_vline(xintercept=median.mydata, color = "red", linetype="dotted", size=1) +
++ labs(title="Number of Steps Taken Each Day", y="Frequency", x="Steps Each Day")
+ plot.steps.day
+
+
+
+##part2
+
+Calculating Mean 
+
+mean.mydata
+
+##   Calculating Median
+
+median.mydata
+
+##Q3...
+
+mydata3 <- mydata1 %>% group_by(interval) %>% summarize(mean.step=mean(steps))
+plot.step.interval <- ggplot(mydata3, aes(x=interval, y=mean.step)) +
+geom_line(color="blue")  + 
+labs(title="Avg no of Steps Taken 5-min Interval", y="Avg no of Steps", x="5-min Interval Time Series")
+plot.step.interval
+
+##2:)   5-minute interval across weekdays and weekends in the dataset contains the max no of steps
+
+anab <- which.max(mydata3$mean.step)
+anab.step <- mydata3$interval[anab]
+sprintf("Max no of Steps is from %gth 5-min Interval", anab.step)
+
+##  [1] "Max no of Steps is from 835th 5-min Interval"
+
+##Q4   Inputing Missing Values
+
+##1:)   Calculate the total no missing values in dataset.
+
+sum(is.na(mydata))
+
+##  [1] 2304
+
+##2:)   Filling all the missing values in dataset
+
+fas.mydata <- mydata
+fas.mydata$steps[is.na(fas.mydata$steps)] <- mean(fas.mydata$steps,na.rm=TRUE)
+fas.mydata$steps <- as.numeric(fas.mydata$steps)
+fas.mydata$interval <- as.numeric(fas.mydata$interval)
+colSums(is.na(fas.mydata)) 
+
+##3:)   Creating a new dataset with missing data filled in which is equal to the original dataset
+
+summary(fas.mydata)
+
+##4:)   Histogram..
+
+fas.mydata2 <- summarize(group_by(fas.mydata,date), daily.step=sum(steps))
+mean.fas <- as.integer(mean(fas.mydata2$daily.step))
+mean.fas
+
+median.fas <- as.integer(median(fas.mydata2$daily.step))
+median.fas
+
+plot.steps.day <- ggplot(fas.mydata2, aes(x=daily.step)) +
++ geom_histogram(binwidth = 600, aes(y=..count.., fill=..count..)) +
++ geom_vline(xintercept=mean.fas, colour = "Black", linetype="dashed", size=1) +
++ geom_vline(xintercept=median.fas, color = "red", linetype="dotted", size=1) +
++ labs(title="Number of Steps Taken Each Day", y="Frequency", x="Steps Each Day")
+ plot.steps.day
+
+
+##Q5   Finding the difference in activity patterns between weekdays and weekends
+fas.mydata$day <- ifelse(weekdays(fas.mydata$date) %in% c("Saturday", "Sunday"), "weekday", "weekend")
+fas.df <- fas.mydata %>% group_by(interval,day) %>% summarise(mean.step=mean(steps))
+plot.weekday.interval <- ggplot(fas.df, aes(x=interval, y=mean.step, color=day)) +
++ facet_grid(day~.) +
++ geom_line() +
++ labs(title = "Avg no of steps taken vs 5-min interval on Weekdays or Weekend", y="Avg no of steps", x= "5-min interval time")
+ 
+
